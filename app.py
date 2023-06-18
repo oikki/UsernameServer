@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import Flask, jsonify, request, current_app
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 
@@ -13,7 +13,7 @@ db = SQLAlchemy(app)
 
 
 def remove_ip_addresses():
-    with current_app.app_context():
+    with app.app_context():
         time_threshold = datetime.utcnow() - timedelta(hours=1)
         users_to_update = User.query.filter(User.last_seen <= time_threshold).all()
 
