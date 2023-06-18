@@ -99,7 +99,7 @@ def update_color_hex(user):
     db.session.commit()
 
 def update_last_seen(user):
-    user.last_seen = datetime.utcnow
+    user.last_seen = datetime.utcnow()
     db.session.commit()
 
 @app.route("/color/red/<value>")
