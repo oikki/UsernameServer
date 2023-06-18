@@ -3,4 +3,3 @@ flask_sqlalchemy
 python-dotenv
 Gunicorn
 psycopg2
-flask_apscheduler

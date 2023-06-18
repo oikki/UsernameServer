@@ -3,8 +3,6 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-from flask_apscheduler import APScheduler
-
 load_dotenv()
 
 app = Flask(__name__)
@@ -12,18 +10,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
 db = SQLAlchemy(app)
 
 
-app.config['SCHEDULER_API_ENABLED'] = True
-
-scheduler = APScheduler()
-@scheduler.task('interval', id='remove_ip_addresses', minutes=60)
 def remove_ip_addresses():
-    with scheduler.app.app_context():
-        time_threshold = datetime.utcnow() - timedelta(hours=1)
-        users_to_update = User.query.filter(User.last_seen <= time_threshold).all()
+    time_threshold = datetime.utcnow() - timedelta(minutes=30)
+    users_to_update = User.query.filter(User.last_seen <= time_threshold).all()
 
-        for user in users_to_update:
-            user.ip_address = ""
-        db.session.commit()
+    for user in users_to_update:
+        user.ip_address = ""
+    db.session.commit()
 
 
 class User(db.Model):
@@ -151,6 +144,7 @@ def color_blue(value):
 
 @app.route("/get_data")
 def get_data():
+    remove_ip_addresses()
     user = get_user()
     if(user is not None):
         update_last_seen(user)
