@@ -1,13 +1,28 @@
 import os
 from dotenv import load_dotenv
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 
 load_dotenv()
 app = Flask(__name__)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
 db = SQLAlchemy(app)
+
+
+def remove_ip_addresses():
+    time_threshold = datetime.utcnow() - timedelta(hours=1)
+    users_to_update = User.query.filter(User.last_seen <= time_threshold).all()
+
+    for user in users_to_update:
+        user.ip_address = ""
+    db.session.commit()
+
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(remove_ip_addresses,'interval',minutes=60)
+sched.start()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -102,6 +117,11 @@ def update_last_seen(user):
     user.last_seen = datetime.utcnow()
     db.session.commit()
 
+def clean_junk(user):
+    user.unicode_string = ""
+    user.username_unfinished = ""
+    db.session.commit()
+
 @app.route("/color/red/<value>")
 def color_red(value):
     user = get_user()
@@ -153,6 +173,7 @@ def login():
         reset_account(user)
     else:
         update_last_seen(user)
+        clean_junk(user)
         #login
 
 
