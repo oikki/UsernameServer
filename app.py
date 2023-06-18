@@ -21,7 +21,7 @@ def remove_ip_addresses():
     db.session.commit()
 
 sched = BackgroundScheduler(daemon=True)
-sched.add_job(remove_ip_addresses,'interval',minutes=60)
+sched.add_job(remove_ip_addresses,'interval',minutes=1)
 sched.start()
 
 class User(db.Model):
