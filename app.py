@@ -98,6 +98,9 @@ def update_color_hex(user):
 
     db.session.commit()
 
+def update_last_seen(user):
+    user.last_seen = datetime.utcnow
+    db.session.commit()
 
 @app.route("/color/red/<value>")
 def color_red(value):
@@ -126,12 +129,19 @@ def color_blue(value):
 
 @app.route("/get_data")
 def get_data():
+    user = get_user()
+    if(user is not None):
+        update_last_seen(user)
     return get_info_as_json()
 
 @app.route("/login_as/<number>")
 def login_as(number):
+    ip_address = get_ip()
     user = User.query.filter(User.id == int(number)).first()
     if(user is None): return "Not registered"
+    user.ip_address = ip_address
+    db.session.commit()
+    update_last_seen(user)
     return "Logged in as: " + user.username
 
 @app.route("/login")
@@ -142,8 +152,9 @@ def login():
     elif user.username == "":
         reset_account(user)
     else:
-        pass
+        update_last_seen(user)
         #login
+
 
     return get_info_as_json()
 
@@ -186,6 +197,7 @@ def finish_username():
     user.username = user.username_unfinished
     user.username_unfinished = ""
     db.session.commit()
+    update_last_seen(user)
 
     return "Account created: " + user.username
 
