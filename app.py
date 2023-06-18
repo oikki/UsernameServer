@@ -1,19 +1,23 @@
 import os
 from dotenv import load_dotenv
-from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
+from flask_apscheduler import APScheduler
 
 load_dotenv()
-app = Flask(__name__)
 
+app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
 db = SQLAlchemy(app)
 
 
+app.config['SCHEDULER_API_ENABLED'] = True
+
+scheduler = APScheduler()
+@scheduler.task('interval', id='remove_ip_addresses', minutes=60)
 def remove_ip_addresses():
-    with app.app_context():
+    with scheduler.app.app_context():
         time_threshold = datetime.utcnow() - timedelta(hours=1)
         users_to_update = User.query.filter(User.last_seen <= time_threshold).all()
 
@@ -21,9 +25,6 @@ def remove_ip_addresses():
             user.ip_address = ""
         db.session.commit()
 
-sched = BackgroundScheduler(daemon=True)
-sched.add_job(remove_ip_addresses,'interval',minutes=1)
-sched.start()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
