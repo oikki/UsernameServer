@@ -9,16 +9,6 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
 db = SQLAlchemy(app)
 
-
-def remove_ip_addresses():
-    time_threshold = datetime.utcnow() - timedelta(minutes=30)
-    users_to_update = User.query.filter(User.last_seen <= time_threshold).all()
-
-    for user in users_to_update:
-        user.ip_address = ""
-    db.session.commit()
-
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ip_address = db.Column(db.String(50))
@@ -35,6 +25,14 @@ class User(db.Model):
 
     def __init__(self, ip_address):
         self.ip_address = ip_address
+
+def remove_ip_addresses():
+    time_threshold = datetime.utcnow() - timedelta(minutes=30)
+    users_to_update = User.query.filter(User.last_seen <= time_threshold).all()
+
+    for user in users_to_update:
+        user.ip_address = ""
+    db.session.commit()
 
 def create_account():
     ip_address = get_ip()
